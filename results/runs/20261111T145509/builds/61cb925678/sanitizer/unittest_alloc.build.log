@@ -1,0 +1,7 @@
+C:\Users\usman\Desktop\ENS491\Project work\initial_testing\subject_system\tests\unittest_alloc.c: In function 'dumper':
+C:\Users\usman\Desktop\ENS491\Project work\initial_testing\subject_system\tests\unittest_alloc.c:29:18: warning: unused parameter 'user' [-Wunused-parameter]
+   29 | int dumper(void* user, const char* section, const char* name,
+      |            ~~~~~~^~~~
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: cannot find -lasan: No such file or directory
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: cannot find -lubsan: No such file or directory
+collect2.exe: error: ld returned 1 exit status

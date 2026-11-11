@@ -1,0 +1,4 @@
+... [section]
+... foo=bar;
+... bazz=buzz quxx;
+basic: e=0

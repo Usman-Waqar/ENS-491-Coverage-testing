@@ -1,0 +1,22 @@
+DIFF_ORACLE no_file.ini SKIP missing-input
+DIFF_ORACLE normal.ini PASS
+DIFF_ORACLE bad_section.ini PASS
+DIFF_ORACLE bad_comment.ini PASS
+DIFF_ORACLE user_error.ini PASS
+DIFF_ORACLE multi_line.ini PASS
+DIFF_ORACLE bad_multi.ini PASS
+DIFF_ORACLE bom.ini PASS
+DIFF_ORACLE duplicate_sections.ini PASS
+DIFF_ORACLE no_value.ini PASS
+DIFF_ORACLE long_section.ini PASS
+DIFF_ORACLE long_line.ini PASS
+DIFF_ORACLE name_only_after_error.ini PASS
+DIFF_ORACLE gen_long_name_multiline.ini PASS
+DIFF_ORACLE gen_inline_comment_mix.ini PASS
+DIFF_ORACLE gen_bom_hash_comment.ini PASS
+DIFF_ORACLE gen_novalue_continuation.ini PASS
+DIFF_ORACLE gen_error_then_sections.ini PASS
+DIFF_ORACLE gen_crlf_boundary.ini PASS
+DIFF_ORACLE gen_hash_key_and_colon.ini PASS
+DIFF_ORACLE gen_overlong_line.ini PASS
+DIFF_ORACLE gen_continuation_handler_error.ini PASS

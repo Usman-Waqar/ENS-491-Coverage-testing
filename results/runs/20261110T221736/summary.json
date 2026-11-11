@@ -1,0 +1,768 @@
+{
+  "run_id": "20261110T221736",
+  "started_utc": "2026-11-10T17:17:36+00:00",
+  "finished_utc": "2026-11-10T17:17:37+00:00",
+  "command": "build_and_test.py --default",
+  "subject": {
+    "name": "inih",
+    "repository": "https://github.com/benhoyt/inih",
+    "commit": "611ab51f8dd7ec583543815b0de693495045fbf8"
+  },
+  "csm": "/home/claude/workspace/csm.json",
+  "tools": {
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "gcov": "gcov (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "python": "3.13.18"
+  },
+  "run_directory": "{workspace}/results/runs/20261110T221736",
+  "aggregate": {
+    "configurations_requested": 1,
+    "configurations_tested": 1,
+    "configurations_rejected": 0,
+    "builds": 1,
+    "build_failures": 0,
+    "tests": {
+      "total": 43,
+      "passed": 36,
+      "failed": 0,
+      "crashed": 0,
+      "no_oracle": 7,
+      "not_run": 0,
+      "skipped": 0,
+      "build_failed": 0
+    },
+    "statement_coverage_per_config": {
+      "min": 100.0,
+      "max": 100.0
+    },
+    "cumulative_statement_coverage": {
+      "covered": 110,
+      "total": 110,
+      "percent": 100.0,
+      "note": "Union over all tested configurations of ini.c lines executed / lines executable in at least one build."
+    }
+  },
+  "rejected_configurations": [],
+  "configurations": [
+    {
+      "config_id": "cfg-001",
+      "configuration": {
+        "INI_HANDLER_LINENO": 0,
+        "INI_ALLOW_MULTILINE": 1,
+        "INI_ALLOW_BOM": 1,
+        "INI_START_COMMENT_PREFIXES": ";#",
+        "INI_ALLOW_INLINE_COMMENTS": 1,
+        "INI_INLINE_COMMENT_PREFIXES": ";",
+        "INI_USE_STACK": 1,
+        "INI_MAX_LINE": 200,
+        "INI_MAX_SECTION": 50,
+        "INI_MAX_NAME": 50,
+        "INI_ALLOW_REALLOC": 0,
+        "INI_INITIAL_ALLOC": 200,
+        "INI_STOP_ON_FIRST_ERROR": 0,
+        "INI_CALL_HANDLER_ON_NEW_SECTION": 0,
+        "INI_ALLOW_NO_VALUE": 0,
+        "INI_CUSTOM_ALLOCATOR": 0,
+        "api_entry_point": "ini_parse",
+        "handler_return_policy": "reject_flagged"
+      },
+      "non_default_settings": {},
+      "validity": {
+        "valid": true,
+        "errors": [],
+        "warnings": [],
+        "violated_constraints": [],
+        "inert_options": [
+          "INI_ALLOW_REALLOC",
+          "INI_INITIAL_ALLOC",
+          "INI_CUSTOM_ALLOCATOR"
+        ]
+      },
+      "compile_group": "61cb925678",
+      "effective_compile_time": {
+        "INI_HANDLER_LINENO": 0,
+        "INI_ALLOW_MULTILINE": 1,
+        "INI_ALLOW_BOM": 1,
+        "INI_START_COMMENT_PREFIXES": ";#",
+        "INI_ALLOW_INLINE_COMMENTS": 1,
+        "INI_INLINE_COMMENT_PREFIXES": ";",
+        "INI_USE_STACK": 1,
+        "INI_MAX_LINE": 200,
+        "INI_MAX_SECTION": 50,
+        "INI_MAX_NAME": 50,
+        "INI_ALLOW_REALLOC": 0,
+        "INI_INITIAL_ALLOC": 200,
+        "INI_STOP_ON_FIRST_ERROR": 0,
+        "INI_CALL_HANDLER_ON_NEW_SECTION": 0,
+        "INI_ALLOW_NO_VALUE": 0,
+        "INI_CUSTOM_ALLOCATOR": 0
+      },
+      "runtime": {
+        "api_entry_point": "ini_parse",
+        "handler_return_policy": "reject_flagged"
+      },
+      "build": {
+        "status": "success",
+        "rebuilt": true,
+        "defines": [
+          "-DINI_HANDLER_LINENO=0",
+          "-DINI_ALLOW_MULTILINE=1",
+          "-DINI_ALLOW_BOM=1",
+          "-DINI_START_COMMENT_PREFIXES=\";#\"",
+          "-DINI_ALLOW_INLINE_COMMENTS=1",
+          "-DINI_INLINE_COMMENT_PREFIXES=\";\"",
+          "-DINI_USE_STACK=1",
+          "-DINI_MAX_LINE=200",
+          "-DINI_MAX_SECTION=50",
+          "-DINI_MAX_NAME=50",
+          "-DINI_ALLOW_REALLOC=0",
+          "-DINI_INITIAL_ALLOC=200",
+          "-DINI_STOP_ON_FIRST_ERROR=0",
+          "-DINI_CALL_HANDLER_ON_NEW_SECTION=0",
+          "-DINI_ALLOW_NO_VALUE=0",
+          "-DINI_CUSTOM_ALLOCATOR=0"
+        ],
+        "warnings": [],
+        "errors": [],
+        "library": [
+          {
+            "source": "{subject}/ini.c",
+            "status": "success",
+            "command": "gcc -O0 -g -Wall -Wextra --coverage -fprofile-arcs -ftest-coverage -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 -c /home/claude/subject_system/ini.c -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o",
+            "warnings": [],
+            "errors": [],
+            "seconds": 0.037
+          }
+        ],
+        "drivers": {
+          "unittest": {
+            "status": "success",
+            "warnings": [],
+            "errors": [],
+            "command": "gcc -O0 -g -Wall -Wextra -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o --coverage -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/unittest"
+          },
+          "unittest_string": {
+            "status": "success",
+            "warnings": [],
+            "errors": [],
+            "command": "gcc -O0 -g -Wall -Wextra -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_string.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o --coverage -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/unittest_string"
+          },
+          "unittest_alloc": {
+            "status": "success",
+            "warnings": [
+              {
+                "file": "{subject}/tests/unittest_alloc.c",
+                "line": 29,
+                "column": 18,
+                "message": "unused parameter \u2018user\u2019",
+                "flag": "-Wunused-parameter"
+              }
+            ],
+            "errors": [],
+            "command": "gcc -O0 -g -Wall -Wextra -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_alloc.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o --coverage -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/unittest_alloc"
+          },
+          "unittest_file_error": {
+            "status": "success",
+            "warnings": [],
+            "errors": [],
+            "command": "gcc -O0 -g -Wall -Wextra -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_file_error.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o --coverage -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/unittest_file_error"
+          },
+          "csm_driver": {
+            "status": "success",
+            "warnings": [],
+            "errors": [],
+            "command": "gcc -O0 -g -Wall -Wextra -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/workspace/drivers/csm_driver.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/ini.o --coverage -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/coverage/csm_driver"
+          }
+        },
+        "sanitizer_build": {
+          "status": "success",
+          "warnings": [],
+          "errors": [],
+          "library": [
+            {
+              "source": "{subject}/ini.c",
+              "status": "success",
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 -c /home/claude/subject_system/ini.c -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o",
+              "warnings": [],
+              "errors": [],
+              "seconds": 0.054
+            }
+          ],
+          "drivers": {
+            "unittest": {
+              "status": "success",
+              "warnings": [],
+              "errors": [],
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/unittest"
+            },
+            "unittest_string": {
+              "status": "success",
+              "warnings": [],
+              "errors": [],
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_string.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/unittest_string"
+            },
+            "unittest_alloc": {
+              "status": "success",
+              "warnings": [
+                {
+                  "file": "{subject}/tests/unittest_alloc.c",
+                  "line": 29,
+                  "column": 18,
+                  "message": "unused parameter \u2018user\u2019",
+                  "flag": "-Wunused-parameter"
+                }
+              ],
+              "errors": [],
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_alloc.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/unittest_alloc"
+            },
+            "unittest_file_error": {
+              "status": "success",
+              "warnings": [],
+              "errors": [],
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/subject_system/tests/unittest_file_error.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/unittest_file_error"
+            },
+            "csm_driver": {
+              "status": "success",
+              "warnings": [],
+              "errors": [],
+              "command": "gcc -O0 -g -Wall -Wextra -fsanitize=address,undefined -fno-omit-frame-pointer -I/home/claude/subject_system -DINI_HANDLER_LINENO=0 -DINI_ALLOW_MULTILINE=1 -DINI_ALLOW_BOM=1 -DINI_START_COMMENT_PREFIXES=\";#\" -DINI_ALLOW_INLINE_COMMENTS=1 -DINI_INLINE_COMMENT_PREFIXES=\";\" -DINI_USE_STACK=1 -DINI_MAX_LINE=200 -DINI_MAX_SECTION=50 -DINI_MAX_NAME=50 -DINI_ALLOW_REALLOC=0 -DINI_INITIAL_ALLOC=200 -DINI_STOP_ON_FIRST_ERROR=0 -DINI_CALL_HANDLER_ON_NEW_SECTION=0 -DINI_ALLOW_NO_VALUE=0 -DINI_CUSTOM_ALLOCATOR=0 /home/claude/workspace/drivers/csm_driver.c /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/ini.o -o /home/claude/workspace/results/runs/20261110T221736/builds/61cb925678/sanitizer/csm_driver"
+            }
+          }
+        }
+      },
+      "tests": {
+        "total": 43,
+        "passed": 36,
+        "failed": 0,
+        "crashed": 0,
+        "no_oracle": 7,
+        "not_run": 0,
+        "skipped": 0,
+        "build_failed": 0,
+        "baseline_variants_used": [
+          "file_error",
+          "multi"
+        ],
+        "crashes": [],
+        "processes": [
+          {
+            "driver": "unittest",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.01,
+            "sanitizers": true,
+            "crash": null
+          },
+          {
+            "driver": "unittest_string",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.01,
+            "sanitizers": true,
+            "crash": null
+          },
+          {
+            "driver": "unittest_alloc",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.01,
+            "sanitizers": true,
+            "crash": null
+          },
+          {
+            "driver": "unittest_file_error",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.009,
+            "sanitizers": true,
+            "crash": null
+          },
+          {
+            "driver": "csm_driver",
+            "argv": [
+              "--api",
+              "ini_parse",
+              "--handler",
+              "reject_flagged",
+              "--",
+              "no_file.ini",
+              "normal.ini",
+              "bad_section.ini",
+              "bad_comment.ini",
+              "user_error.ini",
+              "multi_line.ini",
+              "bad_multi.ini",
+              "bom.ini",
+              "duplicate_sections.ini",
+              "no_value.ini",
+              "long_section.ini",
+              "long_line.ini",
+              "name_only_after_error.ini",
+              "gen_long_name_multiline.ini",
+              "gen_inline_comment_mix.ini",
+              "gen_bom_hash_comment.ini",
+              "gen_novalue_continuation.ini",
+              "gen_error_then_sections.ini",
+              "gen_crlf_boundary.ini",
+              "gen_hash_key_and_colon.ini",
+              "gen_overlong_line.ini",
+              "gen_continuation_handler_error.ini"
+            ],
+            "returncode": 0,
+            "seconds": 0.013,
+            "sanitizers": true,
+            "crash": null
+          },
+          {
+            "driver": "unittest",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.002,
+            "sanitizers": false,
+            "purpose": "coverage",
+            "crash": null
+          },
+          {
+            "driver": "unittest_string",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.002,
+            "sanitizers": false,
+            "purpose": "coverage",
+            "crash": null
+          },
+          {
+            "driver": "unittest_alloc",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.002,
+            "sanitizers": false,
+            "purpose": "coverage",
+            "crash": null
+          },
+          {
+            "driver": "unittest_file_error",
+            "argv": [],
+            "returncode": 0,
+            "seconds": 0.003,
+            "sanitizers": false,
+            "purpose": "coverage",
+            "crash": null
+          },
+          {
+            "driver": "csm_driver",
+            "argv": [
+              "--api",
+              "ini_parse",
+              "--handler",
+              "reject_flagged",
+              "--",
+              "no_file.ini",
+              "normal.ini",
+              "bad_section.ini",
+              "bad_comment.ini",
+              "user_error.ini",
+              "multi_line.ini",
+              "bad_multi.ini",
+              "bom.ini",
+              "duplicate_sections.ini",
+              "no_value.ini",
+              "long_section.ini",
+              "long_line.ini",
+              "name_only_after_error.ini",
+              "gen_long_name_multiline.ini",
+              "gen_inline_comment_mix.ini",
+              "gen_bom_hash_comment.ini",
+              "gen_novalue_continuation.ini",
+              "gen_error_then_sections.ini",
+              "gen_crlf_boundary.ini",
+              "gen_hash_key_and_colon.ini",
+              "gen_overlong_line.ini",
+              "gen_continuation_handler_error.ini"
+            ],
+            "returncode": 0,
+            "seconds": 0.002,
+            "sanitizers": false,
+            "purpose": "coverage",
+            "crash": null
+          }
+        ],
+        "cases": [
+          {
+            "driver": "unittest",
+            "case": "no_file.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "normal.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "bad_section.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "bad_comment.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "user_error.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "multi_line.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "bad_multi.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "bom.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "duplicate_sections.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "no_value.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "long_section.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "long_line.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest",
+            "case": "name_only_after_error.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "empty string",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "basic",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "crlf",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "long line",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "long continued",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_string",
+            "case": "error",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_alloc",
+            "case": "basic",
+            "oracles": {},
+            "status": "no_oracle"
+          },
+          {
+            "driver": "unittest_file_error",
+            "case": "read_error",
+            "oracles": {
+              "baseline:file_error": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "no_file.ini",
+            "oracles": {
+              "baseline:multi": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "normal.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "bad_section.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "bad_comment.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "user_error.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "multi_line.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "bad_multi.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "bom.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "duplicate_sections.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "no_value.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "long_section.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "long_line.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "name_only_after_error.ini",
+            "oracles": {
+              "baseline:multi": "pass",
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_long_name_multiline.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_inline_comment_mix.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_bom_hash_comment.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_novalue_continuation.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_error_then_sections.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_crlf_boundary.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_hash_key_and_colon.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_overlong_line.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          },
+          {
+            "driver": "csm_driver",
+            "case": "gen_continuation_handler_error.ini",
+            "oracles": {
+              "differential": "pass"
+            },
+            "status": "pass"
+          }
+        ]
+      },
+      "coverage": {
+        "developer_suite": {
+          "statement": {
+            "covered": 103,
+            "total": 110,
+            "percent": 93.64
+          },
+          "branch": {
+            "covered": 70,
+            "total": 94,
+            "percent": 74.47
+          },
+          "gcov_json": "{workspace}/results/runs/20261110T221736/cfg-001/coverage_developer.gcov.json.gz",
+          "lcov_tracefile": "{workspace}/results/runs/20261110T221736/cfg-001/coverage_developer.info"
+        },
+        "all_tests": {
+          "statement": {
+            "covered": 110,
+            "total": 110,
+            "percent": 100.0
+          },
+          "branch": {
+            "covered": 81,
+            "total": 94,
+            "percent": 86.17
+          },
+          "gcov_json": "{workspace}/results/runs/20261110T221736/cfg-001/coverage_all.gcov.json.gz",
+          "lcov_tracefile": "{workspace}/results/runs/20261110T221736/cfg-001/coverage_all.info"
+        }
+      }
+    }
+  ],
+  "results_file": "/home/claude/workspace/results/summary.json"
+}
