@@ -50,6 +50,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import csm_model as cm  # noqa: E402
 import validate_constraints as vc  # noqa: E402
 
 SANITIZER_RE = re.compile(
@@ -97,6 +98,26 @@ class Ctx:
 
 def c_string(s: str) -> str:
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+EXE_SUFFIX = ".exe" if (os.name == "nt" or sys.platform.startswith(("win", "cygwin", "msys"))) else ""
+
+
+def sanitizers_available(compiler: str, flags: list[str]) -> tuple[bool, str]:
+    """Compile and link a trivial program with the sanitizer flags. MinGW (Windows) GCC, for
+    example, accepts -fsanitize=address but ships no libasan, so linking fails."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        src = Path(td) / "probe.c"
+        src.write_text("int main(void) { return 0; }\n")
+        try:
+            r = subprocess.run([compiler, *flags, str(src), "-o", str(Path(td) / ("probe" + EXE_SUFFIX))],
+                               capture_output=True, text=True, timeout=60)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            return False, str(e)
+        if r.returncode != 0:
+            return False, (r.stderr.strip().splitlines() or ["link failed"])[-1][:200]
+    return True, ""
 
 
 def macro_flags(csm: vc.CSM, cfg: dict) -> list[str]:
@@ -234,7 +255,7 @@ def build_group(ctx: Ctx, eff: dict, bdir: Path, sanitize: bool, coverage: bool)
         for rule in drv.get("extra_link_sources_when", []):
             if vc.eval_condition(rule["when"], eff):
                 extra += [str(ctx.path(s)) for s in rule["sources"]]
-        exe = bdir / drv["id"]
+        exe = bdir / (drv["id"] + EXE_SUFFIX)
         cmd = base + incs + flags + [str(ctx.path(drv["source"]))] + extra + objects + \
             (["--coverage"] if coverage else []) + ["-o", str(exe)]
         r = run(cmd, bdir, 300)
@@ -250,45 +271,117 @@ def build_group(ctx: Ctx, eff: dict, bdir: Path, sanitize: bool, coverage: bool)
 # Coverage
 # --------------------------------------------------------------------------
 
-def gcov_snapshot(ctx: Ctx, bdir: Path, out_prefix: Path) -> dict | None:
-    srcs = [ctx.path(s) for s in ctx.build["library_sources"]]
-    cov_names = set(ctx.build.get("coverage_sources", [s.name for s in srcs]))
-    lines_total = lines_hit = br_total = br_hit = 0
-    per_line: dict = {}
-    files_json = []
-    for s in srcs:
-        r = run(["gcov", "-b", "--json-format", "--stdout", "-o", str(bdir), str(s)], bdir, 120)
+def _gcov_json(ctx: Ctx, bdir: Path) -> list | None:
+    out = []
+    for s_ in [ctx.path(x) for x in ctx.build["library_sources"]]:
+        r = run(["gcov", "-b", "--json-format", "--stdout", "-o", str(bdir), str(s_)], bdir, 120)
         if r["returncode"] != 0 or not r["stdout"].strip():
             return None
-        data = json.loads(r["stdout"])
-        files_json.append(data)
+        out.append(json.loads(r["stdout"]))
+    return out
+
+
+def _cov_files(ctx: Ctx, files_json: list, bdir: Path):
+    cov_names = set(ctx.build.get("coverage_sources", [Path(x).name for x in ctx.build["library_sources"]]))
+    for data in files_json:
         for f in data["files"]:
             fpath = Path(f["file"])
             if not fpath.is_absolute():
-                fpath = (Path(data.get("current_working_directory", bdir)) / fpath)
-            if fpath.name not in cov_names:
-                continue
-            key = ctx.rel(fpath)
-            for ln in f["lines"]:
-                lines_total += 1
-                lines_hit += ln["count"] > 0
-                nb = len(ln["branches"])
-                taken = sum(1 for x in ln["branches"] if x["count"] > 0)
-                br_total += nb
-                br_hit += taken
-                per_line[f"{key}:{ln['line_number']}"] = {"count": ln["count"], "branches": nb, "taken": taken}
-    out_prefix.parent.mkdir(parents=True, exist_ok=True)
-    with gzip.open(str(out_prefix) + ".gcov.json.gz", "wt") as fh:
-        json.dump(files_json, fh)
-    write_lcov(files_json, cov_names, ctx, Path(str(out_prefix) + ".info"))
+                fpath = Path(data.get("current_working_directory", bdir)) / fpath
+            if fpath.name in cov_names:
+                yield ctx.rel(fpath), f
+
+
+def gcov_snapshot(ctx: Ctx, bdir: Path, out_prefix: Path, write_files: bool = True) -> dict | None:
+    """Line, branch and function coverage of the SUT sources from the current .gcda counters.
+
+    Statement coverage = executed lines / executable lines (gcov 'lines');
+    branch coverage    = branch outcomes taken at least once / all branch outcomes;
+    function coverage  = functions entered / functions."""
+    files_json = _gcov_json(ctx, bdir)
+    if files_json is None:
+        return None
+    lines_total = lines_hit = br_total = br_hit = fn_total = fn_hit = 0
+    per_line, branches, functions = {}, {}, []
+    for key, f in _cov_files(ctx, files_json, bdir):
+        for ln in f["lines"]:
+            lines_total += 1
+            lines_hit += ln["count"] > 0
+            taken = [b["count"] > 0 for b in ln["branches"]]
+            br_total += len(taken)
+            br_hit += sum(taken)
+            per_line[f"{key}:{ln['line_number']}"] = {"count": ln["count"], "branches": len(taken),
+                                                      "taken": sum(taken)}
+            for i, t in enumerate(taken):
+                branches[f"{key}:{ln['line_number']}:{i}"] = t
+        for fn in f.get("functions", []):
+            fl = [ln for ln in f["lines"] if fn["start_line"] <= ln["line_number"] <= fn["end_line"]]
+            fb = [b["count"] > 0 for ln in fl for b in ln["branches"]]
+            fn_total += 1
+            fn_hit += fn["execution_count"] > 0
+            functions.append({"file": key, "function": fn.get("demangled_name", fn["name"]),
+                              "start_line": fn["start_line"], "end_line": fn["end_line"],
+                              "calls": fn["execution_count"],
+                              "lines_covered": sum(1 for ln in fl if ln["count"] > 0), "lines_total": len(fl),
+                              "branches_covered": sum(fb), "branches_total": len(fb),
+                              "blocks_executed": fn.get("blocks_executed"), "blocks": fn.get("blocks")})
     pct = lambda a, b: round(100.0 * a / b, 2) if b else None  # noqa: E731
-    return {
+    res = {
         "statement": {"covered": lines_hit, "total": lines_total, "percent": pct(lines_hit, lines_total)},
         "branch": {"covered": br_hit, "total": br_total, "percent": pct(br_hit, br_total)},
-        "gcov_json": ctx.rel(Path(str(out_prefix) + ".gcov.json.gz")),
-        "lcov_tracefile": ctx.rel(Path(str(out_prefix) + ".info")),
+        "function": {"covered": fn_hit, "total": fn_total, "percent": pct(fn_hit, fn_total)},
+        "functions": functions,
         "_per_line": per_line,
+        "_branches": branches,
     }
+    if write_files:
+        out_prefix.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(str(out_prefix) + ".gcov.json.gz", "wt") as fh:
+            json.dump(files_json, fh)
+        cov_names = set(ctx.build.get("coverage_sources", [Path(x).name for x in ctx.build["library_sources"]]))
+        write_lcov(files_json, cov_names, ctx, Path(str(out_prefix) + ".info"))
+        write_coverage_table(res, Path(str(out_prefix) + ".table.md"), Path(str(out_prefix) + ".table.csv"))
+        res["gcov_json"] = ctx.rel(Path(str(out_prefix) + ".gcov.json.gz"))
+        res["lcov_tracefile"] = ctx.rel(Path(str(out_prefix) + ".info"))
+        res["table"] = ctx.rel(Path(str(out_prefix) + ".table.md"))
+    return res
+
+
+def write_coverage_table(res: dict, md: Path, csv: Path) -> None:
+    pc = lambda a, b: f"{100.0 * a / b:.1f}%" if b else "-"  # noqa: E731
+    rows = ["| Function | Lines | Calls | Line cov. | Branch cov. |", "|---|---|---|---|---|"]
+    out = ["file,function,start_line,end_line,calls,lines_covered,lines_total,branches_covered,branches_total"]
+    for f in res["functions"]:
+        rows.append(f"| {f['function']} | {f['start_line']}-{f['end_line']} | {f['calls']} | "
+                    f"{f['lines_covered']}/{f['lines_total']} ({pc(f['lines_covered'], f['lines_total'])}) | "
+                    f"{f['branches_covered']}/{f['branches_total']} ({pc(f['branches_covered'], f['branches_total'])}) |")
+        out.append(",".join(str(f[k]) for k in ("file", "function", "start_line", "end_line", "calls",
+                                                  "lines_covered", "lines_total", "branches_covered",
+                                                  "branches_total")))
+    s, b, fn = res["statement"], res["branch"], res["function"]
+    rows.append(f"| **total** | | | {s['covered']}/{s['total']} ({s['percent']}%) | "
+                f"{b['covered']}/{b['total']} ({b['percent']}%) |")
+    rows.append("")
+    rows.append(f"Function coverage: {fn['covered']}/{fn['total']} ({fn['percent']}%)")
+    md.write_text("\n".join(rows) + "\n")
+    csv.write_text("\n".join(out) + "\n")
+
+
+def compact_coverage(res: dict) -> dict:
+    """Executed lines / taken branches in compact form (for per-case and index files)."""
+    lines = {}
+    for k, v in res["_per_line"].items():
+        f, ln = k.rsplit(":", 1)
+        if v["count"] > 0:
+            lines.setdefault(f, []).append(int(ln))
+    br = sorted(k for k, t in res["_branches"].items() if t)
+    compiled = {}
+    for k in res["_per_line"]:
+        f, ln = k.rsplit(":", 1)
+        compiled.setdefault(f, []).append(int(ln))
+    return {"lines": {f: cm.format_lines(ls) for f, ls in lines.items()}, "branches_taken": br,
+            "lines_compiled": {f: cm.format_lines(ls) for f, ls in compiled.items()},
+            "statement_percent": res["statement"]["percent"], "branch_percent": res["branch"]["percent"]}
 
 
 def write_lcov(files_json: list, cov_names: set, ctx: Ctx, path: Path) -> None:
@@ -395,7 +488,10 @@ def finalize_status(c: dict) -> None:
         c["status"] = "no_oracle"
 
 
-def driver_argv(ctx: Ctx, drv: dict, cfg: dict) -> list[str]:
+def driver_argv(ctx: Ctx, drv: dict, cfg: dict, extra_inputs: list[str] | None = None,
+                only: list[str] | None = None) -> list[str]:
+    """Command line for a driver. `extra_inputs` (per-configuration test inputs, e.g. LLM-generated)
+    are appended for drivers that accept runtime options; `only` restricts the inputs to a subset."""
     argv: list[str] = []
     if drv.get("accepts_runtime_options"):
         for name in ctx.csm.runtime_options():
@@ -403,12 +499,17 @@ def driver_argv(ctx: Ctx, drv: dict, cfg: dict) -> list[str]:
             if enc["mechanism"] == "driver_cli":
                 argv += [enc["flag"], str(cfg[name])]
         argv.append("--")
+    inputs = []
     for a in drv.get("args", []):
         if a == "@input_files":
-            argv += ctx.suite.get("input_files", [])
+            inputs += ctx.suite.get("input_files", [])
         else:
-            argv.append(ctx.path(a).name)
-    return argv
+            inputs.append(ctx.path(a).name)
+    if drv.get("accepts_runtime_options"):
+        inputs += [Path(x).name for x in (extra_inputs or [])]
+    if only is not None:
+        inputs = [i for i in inputs if i in only]
+    return argv + inputs
 
 
 def ordered_drivers(ctx: Ctx) -> list[dict]:
@@ -418,7 +519,7 @@ def ordered_drivers(ctx: Ctx) -> list[dict]:
 
 
 def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: dict,
-              cfg_dir: Path) -> tuple[dict, dict]:
+              cfg_dir: Path, meta: dict | None = None) -> tuple[dict, dict]:
     """Verdict pass on verdict_build (sanitizers when enabled); coverage pass on
     cov_build. When both are the same build, one pass serves both purposes."""
     suite = ctx.suite
@@ -426,17 +527,22 @@ def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: di
     variants = matching_variants(ctx, eff)
     timeout = ctx.args.timeout
     sandbox = cfg_dir / "sandbox"
+    meta = meta or {}
+    extra_inputs = [str(ctx.path(x)) for x in meta.get("extra_inputs", [])]
+    expectations = meta.get("expectations", {})
+    test_env = {k: str(v) for k, v in (meta.get("env") or {}).items()}
     gen_inputs = [ctx.path(a) for d in suite.get("drivers", []) for a in d.get("args", [])
                   if a.startswith("{workspace}") or a.startswith("{subject}")]
-    prepare_sandbox(ctx, sandbox, gen_inputs)
+    prepare_sandbox(ctx, sandbox, gen_inputs + [Path(x) for x in extra_inputs])
     same = verdict_build is cov_build
 
     cases, processes, coverage = [], [], {}
 
     def run_driver(build: dict, drv: dict, argv: list[str], ok_codes, tag: str):
         exe = build["drivers"][drv["id"]]["executable"]
-        env = ENV_SAN if build["sanitizers"] else None
-        r = run([exe] + argv, sandbox, timeout, env)
+        env = dict(ENV_SAN) if build["sanitizers"] else {}
+        env.update(test_env)
+        r = run([exe] + argv, sandbox, timeout, env or None)
         (cfg_dir / f"{drv['id']}{tag}.stdout.txt").write_text(r["stdout"])
         (cfg_dir / f"{drv['id']}{tag}.stderr.txt").write_text(r["stderr"])
         return r, classify_process(r, ok_codes)
@@ -463,7 +569,7 @@ def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: di
         if skip:
             cases.append(skip)
             continue
-        argv = driver_argv(ctx, drv, cfg)
+        argv = driver_argv(ctx, drv, cfg, extra_inputs)
         ok_codes = (0, 1) if drv["origin"] == "generated" else (0,)
         r, crash = run_driver(verdict_build, drv, argv, ok_codes, "")
         processes.append({"driver": drv["id"], "argv": argv, "returncode": r["returncode"],
@@ -495,6 +601,24 @@ def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: di
                     c["oracles"]["differential"] = verdict
                 if verdict == "fail":
                     c["differential_detail"] = detail
+        if drv["origin"] == "generated" and expectations:
+            act = split_cases(r["stdout"], delim)
+            for c in cs:
+                exp = expectations.get(c["case"])
+                if exp is None or c["case"] not in act or exp.get("driver", drv["id"]) != drv["id"]:
+                    continue
+                if isinstance(exp, dict) and "contains" in exp:
+                    got = "\n".join(act[c["case"]])
+                    missing = [x for x in exp["contains"] if x not in got]
+                    c["oracles"]["expected"] = "fail" if missing else "pass"
+                    if missing:
+                        c["expected_missing"] = missing
+                elif isinstance(exp, dict) and "lines" in exp:
+                    want = list(exp["lines"])
+                    c["oracles"]["expected"] = "pass" if act[c["case"]] == want else "fail"
+                    if act[c["case"]] != want:
+                        c["diff"] = list(difflib.unified_diff(want, act[c["case"]], "expected", "actual",
+                                                              lineterm="", n=1))[:30]
         if crash:
             cs.append({"driver": drv["id"], "case": "<process>", "oracles": {}, "status": "crash",
                        "crash": crash})
@@ -521,7 +645,7 @@ def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: di
                     coverage["developer_suite"] = snap
             if unavailable(cov_build, drv):
                 continue
-            argv = driver_argv(ctx, drv, cfg)
+            argv = driver_argv(ctx, drv, cfg, extra_inputs)
             ok_codes = (0, 1) if drv["origin"] == "generated" else (0,)
             r, crash = run_driver(cov_build, drv, argv, ok_codes, ".coverage_run")
             processes.append({"driver": drv["id"], "argv": argv, "returncode": r["returncode"],
@@ -534,6 +658,27 @@ def run_tests(ctx: Ctx, cfg: dict, eff: dict, verdict_build: dict, cov_build: di
         snap = gcov_snapshot(ctx, bdir, cfg_dir / "coverage_all")
         if snap:
             coverage["all_tests"] = snap
+
+    # ---------------- per-test-case coverage (generated driver, one input at a time) ----------------
+    if getattr(ctx.args, "per_case", True) and cov_build["status"] == "success":
+        bdir = Path(cov_build["dir"])
+        per_case = {}
+        for drv in ordered_drivers(ctx):
+            if drv["origin"] != "generated" or unavailable(cov_build, drv) or not drv.get("accepts_runtime_options"):
+                continue
+            all_inputs = driver_argv(ctx, drv, cfg, extra_inputs)
+            inputs = all_inputs[all_inputs.index("--") + 1:] if "--" in all_inputs else all_inputs
+            for inp in inputs:
+                reset_counters(bdir)
+                argv = driver_argv(ctx, drv, cfg, extra_inputs, only=[inp])
+                exe = cov_build["drivers"][drv["id"]]["executable"]
+                run([exe] + argv, sandbox, timeout, test_env or None)
+                snap = gcov_snapshot(ctx, bdir, cfg_dir / "unused", write_files=False)
+                if snap:
+                    per_case[f"{drv['id']}/{inp}"] = compact_coverage(snap)
+        if per_case:
+            (cfg_dir / "per_case_coverage.json").write_text(json.dumps(per_case, indent=1))
+            coverage["per_case_file"] = ctx.rel(cfg_dir / "per_case_coverage.json")
 
     for c in cases:
         finalize_status(c)
@@ -566,7 +711,9 @@ def collect_configs(csm: vc.CSM, args) -> list[dict]:
     if args.config:
         return [json.loads(args.config)]
     if args.configs:
-        data = json.loads(Path(args.configs).read_text())
+        data = cm.read_model_file(args.configs)
+        if isinstance(data, dict) and isinstance(data.get("configs"), list):
+            data = data["configs"]
         return data if isinstance(data, list) else [data]
     if args.developer_variants:
         suite = csm.data.get("test_suite", {})
@@ -617,10 +764,22 @@ def main(argv=None) -> int:
     ap.add_argument("--strict", action="store_true", help="soft-constraint violations make a config invalid")
     ap.add_argument("--force-invalid", action="store_true", help="build and test invalid configurations too")
     ap.add_argument("--timeout", type=float, default=60.0)
+    ap.add_argument("--keep-builds", action="store_true", help="keep object files, executables and sandboxes")
+    ap.add_argument("--no-per-case", dest="per_case", action="store_false",
+                    help="skip per-test-case coverage of the generated driver")
+    ap.add_argument("--label", default=None, help="free-text label stored in the summary")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
 
     csm = vc.load_csm(args.csm)
+    sanitizer_note = None
+    if not args.no_sanitize:
+        ok_san, why = sanitizers_available(csm.data["build"]["compiler"], csm.data["build"].get("sanitizer_cflags", []))
+        if not ok_san:
+            args.no_sanitize = True
+            sanitizer_note = (f"sanitizers unavailable with this compiler ({why}); running without ASan/UBSan, so "
+                              f"memory errors are NOT detected. Use Linux or WSL for full results.")
+            print("WARNING: " + sanitizer_note, file=sys.stderr)
     ctx = Ctx(csm, args)
     requested = collect_configs(csm, args)
     started = datetime.now(timezone.utc)
@@ -628,8 +787,13 @@ def main(argv=None) -> int:
     # 1. validate
     entries = []
     for i, raw in enumerate(requested, 1):
+        meta = {}
+        if isinstance(raw, dict) and "configuration" in raw:
+            meta = {k: v for k, v in raw.items() if k != "configuration"}
+            raw = raw["configuration"]
         rep = vc.validate(csm, raw, strict=args.strict)
-        entries.append({"config_id": f"cfg-{i:03d}", "requested": raw, "report": rep})
+        entries.append({"config_id": meta.get("config_id") or f"cfg-{i:03d}", "requested": raw,
+                        "report": rep, "meta": meta})
 
     # 2. group by effective compile-time settings
     groups: "OrderedDict[str, dict]" = OrderedDict()
@@ -643,6 +807,7 @@ def main(argv=None) -> int:
 
     results = []
     cumulative: dict = {}
+    index = {"configs": {}, "configs_developer": {}, "executable_lines": set(), "branches": set()}
     for key, g in groups.items():
         bdir = ctx.run_dir / "builds" / key
         eff0 = g["members"][0]["report"]["effective_configuration"]
@@ -675,6 +840,9 @@ def main(argv=None) -> int:
                 build_rec["sanitizer_build"] = strip(ver_build)
             res = {
                 "config_id": e["config_id"],
+                "provenance": {k: v for k, v in e["meta"].items()
+                               if k not in ("config_id", "extra_inputs", "expectations", "env")},
+                "extra_inputs": e["meta"].get("extra_inputs", []),
                 "configuration": cfg,
                 "non_default_settings": non_default(csm, cfg),
                 "validity": {k: rep[k] for k in ("valid", "errors", "warnings", "violated_constraints", "inert_options")},
@@ -685,34 +853,62 @@ def main(argv=None) -> int:
             }
             build = {"status": "success" if ok else "failure"}
             if build["status"] == "success":
-                tests, cov = run_tests(ctx, cfg, eff, ver_build, cov_build, cfg_dir)
+                tests, cov = run_tests(ctx, cfg, eff, ver_build, cov_build, cfg_dir, e["meta"])
                 res["tests"] = tests
                 for k, c in cov.items():
                     if k == "all_tests":
                         for ln, info in c["_per_line"].items():
                             cur = cumulative.setdefault(ln, 0)
                             cumulative[ln] = cur + info["count"]
-                res["coverage"] = {k: {kk: vv for kk, vv in c.items() if not kk.startswith("_")}
-                                   for k, c in cov.items()}
+                        index["configs"][e["config_id"]] = compact_coverage(c)
+                        for ln, info in c["_per_line"].items():
+                            index["executable_lines"].add(ln)
+                        index["branches"].update(c["_branches"].keys())
+                    if k == "developer_suite":
+                        index["configs_developer"][e["config_id"]] = compact_coverage(c)
+                res["coverage"] = {k: ({kk: vv for kk, vv in c.items() if not kk.startswith("_")}
+                                       if isinstance(c, dict) else c) for k, c in cov.items()}
+                if not args.keep_builds:
+                    shutil.rmtree(cfg_dir / "sandbox", ignore_errors=True)
+                if e["meta"].get("env"):
+                    res["env"] = e["meta"]["env"]
             else:
                 res["tests"] = None
                 res["coverage"] = None
             results.append(res)
+            (ctx.results_dir / "summary.partial.json").write_text(json.dumps(
+                {"run_id": ctx.run_id, "completed": len(results), "configurations": results}, indent=1))
             if not args.quiet:
                 print("   " + one_line(res), flush=True)
+        if not args.keep_builds:
+            shutil.rmtree(bdir, ignore_errors=True)
 
     skipped = [{"config_id": e["config_id"], "requested": e["requested"], "errors": e["report"]["errors"]}
                for e in entries if not e["report"]["valid"] and not args.force_invalid]
     agg = aggregate(results, cumulative, len(groups), skipped)
+    index_out = {"run_id": ctx.run_id,
+                 "executable_lines": sorted(index["executable_lines"]),
+                 "branches": sorted(index["branches"]),
+                 "configs": index["configs"],
+                 "configs_developer": index["configs_developer"],
+                 "configurations": {r["config_id"]: r["configuration"] for r in results}}
+    (ctx.run_dir / "coverage_index.json").write_text(json.dumps(index_out, indent=1))
+    write_run_table(ctx, results)
+    if not args.keep_builds:
+        shutil.rmtree(ctx.run_dir / "builds", ignore_errors=True)
     summary = {
         "run_id": ctx.run_id,
+        "label": args.label,
         "started_utc": started.isoformat(timespec="seconds"),
         "finished_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "command": " ".join([Path(sys.argv[0]).name] + (argv if argv is not None else sys.argv[1:])),
         "subject": {k: csm.data["system"].get(k) for k in ("name", "repository", "commit")},
         "csm": str(csm.path),
         "tools": tool_versions(),
+        "sanitizers": {"enabled": not args.no_sanitize, "note": sanitizer_note},
         "run_directory": ctx.rel(ctx.run_dir),
+        "coverage_index": ctx.rel(ctx.run_dir / "coverage_index.json"),
+        "coverage_table": ctx.rel(ctx.run_dir / "coverage_table.md"),
         "aggregate": agg,
         "rejected_configurations": skipped,
         "configurations": results,
@@ -722,10 +918,35 @@ def main(argv=None) -> int:
     text = json.dumps(summary, indent=2)
     (ctx.results_dir / "summary.json").write_text(text)
     (ctx.run_dir / "summary.json").write_text(text)
+    (ctx.results_dir / "summary.partial.json").unlink(missing_ok=True)
     if not args.quiet:
         print_report(summary)
     bad = agg["tests"]["failed"] + agg["tests"]["crashed"] + agg["build_failures"]
     return 1 if bad else 0
+
+
+def write_run_table(ctx: Ctx, results: list) -> None:
+    hdr = ["| Config | Source | Build | Tests (pass/fail/crash/no-oracle/skip) | Statement | Branch | Function "
+           "| Dev-suite stmt | Non-default settings |", "|---|---|---|---|---|---|---|---|---|"]
+    csv = ["config_id,source,compile_group,passed,failed,crashed,no_oracle,skipped,stmt_pct,branch_pct,func_pct,"
+           "dev_stmt_pct,dev_branch_pct,dev_func_pct"]
+    for r in results:
+        t = r.get("tests") or {}
+        cov = r.get("coverage") or {}
+        al, dv = cov.get("all_tests") or {}, cov.get("developer_suite") or {}
+        g = lambda d, k: (d.get(k) or {}).get("percent")  # noqa: E731
+        nd = ", ".join(f"{k}={v!r}" for k, v in r["non_default_settings"].items()) or "-"
+        src = r.get("provenance", {}).get("source", "-")
+        hdr.append(f"| {r['config_id']} | {src} | {r['compile_group']}{'' if r['build']['rebuilt'] else ' (reused)'} | "
+                   f"{t.get('passed', '-')}/{t.get('failed', '-')}/{t.get('crashed', '-')}/{t.get('no_oracle', '-')}/"
+                   f"{t.get('skipped', '-')} | {g(al, 'statement')} | {g(al, 'branch')} | {g(al, 'function')} | "
+                   f"{g(dv, 'statement')} | {nd} |")
+        csv.append(",".join(str(x) for x in [r["config_id"], src, r["compile_group"], t.get("passed"), t.get("failed"),
+                                             t.get("crashed"), t.get("no_oracle"), t.get("skipped"),
+                                             g(al, "statement"), g(al, "branch"), g(al, "function"),
+                                             g(dv, "statement"), g(dv, "branch"), g(dv, "function")]))
+    (ctx.run_dir / "coverage_table.md").write_text("\n".join(hdr) + "\n")
+    (ctx.run_dir / "coverage_table.csv").write_text("\n".join(csv) + "\n")
 
 
 def non_default(csm: vc.CSM, cfg: dict) -> dict:
@@ -739,8 +960,9 @@ def one_line(res: dict) -> str:
     cov = (res["coverage"] or {}).get("all_tests") or {}
     st = cov.get("statement", {}).get("percent")
     br = cov.get("branch", {}).get("percent")
+    fn = cov.get("function", {}).get("percent")
     return (f"{res['config_id']}: pass={t['passed']} fail={t['failed']} crash={t['crashed']} "
-            f"no_oracle={t['no_oracle']} skipped={t['skipped']} | stmt={st}% branch={br}% "
+            f"no_oracle={t['no_oracle']} skipped={t['skipped']} | stmt={st}% branch={br}% func={fn}% "
             f"| runtime={res['runtime']}")
 
 
@@ -752,6 +974,8 @@ def aggregate(results: list, cumulative: dict, n_groups: int, skipped: list) -> 
                 tot[k] += r["tests"][k]
     cov_vals = [r["coverage"]["all_tests"]["statement"]["percent"] for r in results
                 if r.get("coverage") and "all_tests" in r["coverage"]]
+    fn_vals = [r["coverage"]["all_tests"]["function"]["percent"] for r in results
+               if r.get("coverage") and "all_tests" in r["coverage"]]
     cum_total = len(cumulative)
     cum_hit = sum(1 for v in cumulative.values() if v > 0)
     return {
@@ -764,6 +988,10 @@ def aggregate(results: list, cumulative: dict, n_groups: int, skipped: list) -> 
         "statement_coverage_per_config": {
             "min": min(cov_vals) if cov_vals else None,
             "max": max(cov_vals) if cov_vals else None,
+        },
+        "function_coverage_per_config": {
+            "min": min(fn_vals) if fn_vals else None,
+            "max": max(fn_vals) if fn_vals else None,
         },
         "cumulative_statement_coverage": {
             "covered": cum_hit, "total": cum_total,
@@ -789,11 +1017,12 @@ def print_report(s: dict) -> None:
             print(f"  {r['config_id']}: statement {d['statement']['percent']}% "
                   f"({d['statement']['covered']}/{d['statement']['total']}) developer suite -> "
                   f"{al['statement']['percent']}% with generated tests; branch "
-                  f"{d['branch']['percent']}% -> {al['branch']['percent']}%")
+                  f"{d['branch']['percent']}% -> {al['branch']['percent']}%; function "
+                  f"{d['function']['percent']}% -> {al['function']['percent']}%")
     c = a["cumulative_statement_coverage"]
     if c["total"]:
         print(f"cumulative statement coverage across configurations: {c['percent']}% ({c['covered']}/{c['total']})")
-    print(f"summary written to {s['results_file']}")
+    print(f"summary written to {s['results_file']}; per-config table {s['coverage_table']}")
 
 
 if __name__ == "__main__":
