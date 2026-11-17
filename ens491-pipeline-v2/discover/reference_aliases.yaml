@@ -1,0 +1,6 @@
+# Human-maintained alias map used by compare.py (RQ1 scoring).
+# Discovered names on the left, reference-model names on the right. Add an
+# entry only after checking that both denote the same variability point.
+options:
+  entry_point: api_entry_point            # S3 rule 'alternative_entry_points'
+  ini_handler_return: handler_return_policy  # S3 rule 'callback_return_contract'
