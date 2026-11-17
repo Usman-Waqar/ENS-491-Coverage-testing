@@ -1,8 +1,0 @@
-Files deleted by branch pipeline-v2-all-phases (compared with main).
-They are old run outputs and build by-products, regenerable with ./run_pipeline.sh; delete them from the repo when you copy this zip in.
-
-__pycache__/validate_constraints.cpython-314.pyc
-results/runs/20261110T221736/ (whole folder)
-results/runs/20261111T003323/ (whole folder)
-results/runs/20261111T145509/ (whole folder)
-results/summary.json
